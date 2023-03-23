@@ -1,0 +1,15 @@
+version: '3.9'
+services: 
+  redis:
+    image: redis
+    container_name: redis
+    ports: 
+      - 6379:6379
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=ts
+      - POSTGRES_PASSWORD=ts
+    ports:
+      - '5432:5432'

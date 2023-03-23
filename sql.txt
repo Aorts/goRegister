@@ -1,0 +1,30 @@
+"create table tbl_register (
+    id serial primary key ,
+    cid varchar(13) not null unique ,
+    name varchar(50) not null,
+    birthdate varchar(8) not null,
+    mobile varchar(10),
+    status varchar(10),
+    register_code varchar(4),
+    created_date datetime default now(),
+    updated_date datetime
+);"
+
+"{
+    ""code"": 200,
+    ""message"": ""success"",
+    ""data"" : {
+        ""register_code"" : ""9234""
+    }
+}"
+
+"{
+    "cid": "string",
+    "name": "string",
+    "birthdate" : "dd-MM-YYYY",
+    "mobile": "string"
+}"
+"{
+    ""code"": 200,
+    ""message"": ""User already registerd""
+}"
