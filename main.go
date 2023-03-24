@@ -32,6 +32,8 @@ func main() {
 		return c.SendString(cfg.Version)
 	})
 	app.Post("/api/register", handler.RegisterHandler(handler.NewRegisterFunc(db), handler.NewRegisterRedisFunc(redisClient)))
+	app.Post("/api/verify", handler.SetVerifyHandler(handler.NewSetVerifyFunc(redisClient), handler.NewDelVerifyFunc(redisClient), handler.NewUpdateVerifyFunc(db)))
+	app.Get("/api/:cid", handler.GetStatusHandler(handler.NewGetStatusFunc(db)))
 	app.Listen(cfg.Server.Port)
 }
 

@@ -28,3 +28,16 @@
     ""code"": 200,
     ""message"": ""User already registerd""
 }"
+
+"{
+    "cid": "string",
+    "register_code": "string"
+}"
+
+"{
+    ""code"": 200,
+    ""message"": ""success""
+}"
+
+"cid": "1469903155222",
+    "register_code": "1775"
