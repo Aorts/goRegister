@@ -20,26 +20,6 @@ type RegisterInput struct {
 	Mobile    string `json:"mobile"`
 }
 
-type ReturnRegister struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    *DataResult `json:"data,omitempty"`
-}
-
-type DataResult struct {
-	RegisterCode string `json:"register_code,omitempty"`
-	Status       string `json:"status,omitempty"`
-}
-
-type GetStatusResult struct {
-	Status string `db:"status"`
-}
-
-type GetVerifyInput struct {
-	CitizenId    string `json:"cid"`
-	RegisterCode string `json:"register_code"`
-}
-
 func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegisterRedisFunc) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var regInput RegisterInput
@@ -48,12 +28,12 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 		if err != nil {
 			return fiber.NewError(999, "cannot Parser to body")
 		}
-		key := fmt.Sprintf("REGISTER:%v", regInput.CitizenId)
+		key := fmt.Sprintf("REGISTER:%s", regInput.CitizenId)
 
 		Birthdate, checkAge := checkAge(regInput.Birthdate)
 		if checkAge == false {
-			data := ReturnRegister{
-				Code:    200,
+			data := ReturnResponse{
+				Code:    403,
 				Message: "User is underage cannot register",
 			}
 			return c.JSON(data)
@@ -62,14 +42,14 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 		resgfisResult, err := registerFunc(regInput.CitizenId, regInput.Name, Birthdate, regInput.Mobile)
 		if err != nil {
 			if strings.Contains(err.Error(), "tbl_register_cid_key") {
-				data := ReturnRegister{
-					Code:    200,
+				data := ReturnResponse{
+					Code:    409,
 					Message: "User already registerd",
 				}
 				return c.JSON(data)
 			} else {
-				data := ReturnRegister{
-					Code:    200,
+				data := ReturnResponse{
+					Code:    500,
 					Message: "error has occurred. please contact your system administrator",
 				}
 				return c.JSON(data)
@@ -78,14 +58,14 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 
 		err = setRegisterRedisFunc(c.Context(), key, resgfisResult)
 		if err != nil {
-			data := ReturnRegister{
-				Code:    200,
+			data := ReturnResponse{
+				Code:    500,
 				Message: "error has occurred. please contact your system administrator",
 			}
 			return c.JSON(data)
 		}
-		data := ReturnRegister{
-			Code:    200,
+		data := ReturnResponse{
+			Code:    201,
 			Message: "success",
 			Data: &DataResult{
 				RegisterCode: resgfisResult,
@@ -114,7 +94,7 @@ func NewRegisterFunc(db *sqlx.DB) RegisterFunc {
 			name,
 			birthdate,
 			mobile,
-			"Pending",
+			"PENDING",
 			randNumStr,
 		)
 		if err != nil {
@@ -156,135 +136,4 @@ func checkAge(birthdate string) (string, bool) {
 		return dt, true
 	}
 	return dt, false
-}
-
-func GetStatusHandler(getStatusFunc GetStatusFunc) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		citizenId := c.Params("cid")
-		statusRes, err := getStatusFunc(citizenId)
-		if err != nil {
-			if strings.Contains(err.Error(), "sql: no rows in result set") {
-				data := ReturnRegister{
-					Code:    200,
-					Message: "Invilid Citizen ID",
-				}
-				return c.JSON(data)
-			} else {
-				data := ReturnRegister{
-					Code:    200,
-					Message: "error has occurred. please contact your system administrator",
-				}
-				return c.JSON(data)
-			}
-		}
-		data := ReturnRegister{
-			Code:    200,
-			Message: "success",
-			Data: &DataResult{
-				Status: statusRes,
-			},
-		}
-		return c.JSON(data)
-	}
-}
-
-type GetStatusFunc func(citizenId string) (string, error)
-
-func NewGetStatusFunc(db *sqlx.DB) GetStatusFunc {
-	return func(citizenId string) (string, error) {
-		query := "select status  from  tbl_register where  cid=$1"
-		res := GetStatusResult{}
-		err := db.Get(&res, query, citizenId)
-		if err != nil {
-			return "", err
-		}
-		status := res.Status
-		return status, nil
-	}
-}
-
-func SetVerifyHandler(getRedisfunc SetVerifyFunc, delRedis DelVerifyFunc, updateStatus UpdateVerifyFunc) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var veriInput GetVerifyInput
-
-		err := c.BodyParser(&veriInput)
-		if err != nil {
-			return fiber.NewError(999, "cannot Parser to body")
-		}
-		key := fmt.Sprintf("REGISTER:%v", veriInput.CitizenId)
-		result, err := getRedisfunc(c.Context(), key)
-		if err != nil {
-			data := ReturnRegister{
-				Code:    200,
-				Message: "Invalid Citizen ID",
-			}
-			return c.JSON(data)
-		}
-		if result != veriInput.RegisterCode {
-			data := ReturnRegister{
-				Code:    200,
-				Message: "Invalid Register Code",
-			}
-			return c.JSON(data)
-		}
-		err = delRedis(c.Context(), key)
-		if err != nil {
-			data := ReturnRegister{
-				Code:    200,
-				Message: "error has occurred. please contact your system administrator",
-			}
-			return c.JSON(data)
-		}
-		err = updateStatus(veriInput.CitizenId)
-		if err != nil {
-			data := ReturnRegister{
-				Code:    200,
-				Message: "error has occurred. please contact your system administrator",
-			}
-			return c.JSON(data)
-		}
-		data := ReturnRegister{
-			Code:    200,
-			Message: "success",
-		}
-		return c.JSON(data)
-	}
-}
-
-type SetVerifyFunc func(ctx context.Context, key string) (string, error)
-
-type DelVerifyFunc func(ctx context.Context, key string) error
-
-type UpdateVerifyFunc func(citizenId string) error
-
-func NewSetVerifyFunc(redisClient *redis.Client) SetVerifyFunc {
-	return func(ctx context.Context, key string) (string, error) {
-		return redisClient.Get(ctx, key).Result()
-	}
-}
-
-func NewDelVerifyFunc(redisClient *redis.Client) DelVerifyFunc {
-	return func(ctx context.Context, key string) error {
-		return redisClient.Del(ctx, key).Err()
-	}
-}
-
-func NewUpdateVerifyFunc(db *sqlx.DB) UpdateVerifyFunc {
-	return func(citizenId string) error {
-		query := "update tbl_register set status = 'ACTIVE' , updated_date  = now()  where cid=$1"
-		tx, err := db.Begin()
-		if err != nil {
-			return err
-		}
-		res, err := tx.Exec(query, citizenId)
-		if err != nil {
-			return err
-		}
-		_ = res
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
-		return nil
-	}
 }
