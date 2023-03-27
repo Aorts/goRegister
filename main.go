@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"goEx/config"
-	"goEx/handler"
+	register_handler "goEx/register"
 	"strings"
 	"time"
 
@@ -24,16 +24,14 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-
 	redisClient := initRedis(cfg.Redis)
-
 	app := fiber.New()
 	app.Get("/version", func(c *fiber.Ctx) error {
 		return c.SendString(cfg.Version)
 	})
-	app.Post("/api/register", handler.RegisterHandler(handler.NewRegisterFunc(db), handler.NewRegisterRedisFunc(redisClient)))
-	app.Post("/api/verify", handler.SetVerifyHandler(handler.NewSetVerifyFunc(redisClient), handler.NewDelVerifyFunc(redisClient), handler.NewUpdateVerifyFunc(db)))
-	app.Get("/api/:cid", handler.GetStatusHandler(handler.NewGetStatusFunc(db)))
+	app.Post("/api/register", register_handler.RegisterHandler(register_handler.NewRegisterFunc(db), register_handler.NewRegisterRedisFunc(redisClient)))
+	app.Post("/api/verify", register_handler.SetVerifyHandler(register_handler.NewSetVerifyFunc(redisClient), register_handler.NewDelVerifyFunc(redisClient), register_handler.NewUpdateVerifyFunc(db)))
+	app.Get("/api/:cid", register_handler.GetStatusHandler(register_handler.NewGetStatusFunc(db)))
 	app.Listen(cfg.Server.Port)
 }
 

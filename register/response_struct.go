@@ -1,4 +1,4 @@
-package handler
+package register_handler
 
 type ReturnResponse struct {
 	Code    int         `json:"code"`

@@ -1,8 +1,10 @@
-package handler
+package register_handler
 
 import (
 	"context"
 	"fmt"
+	"goEx/api"
+	"net/http"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
@@ -20,44 +22,28 @@ func SetVerifyHandler(getRedisfunc SetVerifyFunc, delRedis DelVerifyFunc, update
 
 		err := c.BodyParser(&veriInput)
 		if err != nil {
-			return fiber.NewError(999, "cannot Parser to body")
+			return c.Status(http.StatusConflict).JSON(api.Err(409, "Conflict body"))
 		}
 		key := fmt.Sprintf("REGISTER:%s", veriInput.CitizenId)
 		result, err := getRedisfunc(c.Context(), key)
 		if err != nil {
-			return c.JSON(ReturnResponse{
-				Code:    404,
-				Message: "Invalid Citizen ID",
-			})
+			return c.Status(http.StatusNotFound).JSON(api.Err(404, "Invalid Citizen ID"))
+
 		}
 		if result != veriInput.RegisterCode {
-			data := ReturnResponse{
-				Code:    404,
-				Message: "Invalid Register Code",
-			}
-			return c.JSON(data)
+			return c.Status(http.StatusNotFound).JSON(api.Err(404, "Invalid Register Code"))
+
 		}
 		err = delRedis(c.Context(), key)
 		if err != nil {
-			data := ReturnResponse{
-				Code:    999,
-				Message: "error has occurred. please contact your system administrator",
-			}
-			return c.JSON(data)
+			return c.Status(http.StatusServiceUnavailable).JSON(api.Err(503, "error has occurred. please contact your system administrator"))
 		}
 		err = updateStatus(veriInput.CitizenId)
 		if err != nil {
-			data := ReturnResponse{
-				Code:    999,
-				Message: "error has occurred. please contact your system administrator",
-			}
-			return c.JSON(data)
+			return c.Status(http.StatusServiceUnavailable).JSON(api.Err(503, "error has occurred. please contact your system administrator"))
 		}
-		data := ReturnResponse{
-			Code:    200,
-			Message: "success",
-		}
-		return c.JSON(data)
+		return c.Status(http.StatusOK).JSON(api.Err(200, "success"))
+
 	}
 }
 

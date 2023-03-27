@@ -1,7 +1,8 @@
-package handler
+package register_handler
 
 import (
 	"goEx/api"
+	"net/http"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,23 +19,12 @@ func GetStatusHandler(getStatusFunc GetStatusFunc) fiber.Handler {
 		statusRes, err := getStatusFunc(citizenId)
 		if err != nil {
 			if strings.Contains(err.Error(), "sql: no rows in result set") {
-				return c.JSON(api.Err(404, "error has occurred. please contact your system administrator"))
+				return c.Status(http.StatusNotFound).JSON(api.Err(404, "error has occurred. please contact your system administrator"))
 			} else {
-				data := ReturnResponse{
-					Code:    500,
-					Message: "error has occurred. please contact your system administrator",
-				}
-				return c.JSON(data)
+				return c.Status(http.StatusInternalServerError).JSON(api.Err(500, "error has occurred. please contact your system administrator"))
 			}
 		}
-		data := ReturnResponse{
-			Code:    200,
-			Message: "success",
-			Data: &DataResult{
-				Status: statusRes,
-			},
-		}
-		return c.JSON(data)
+		return c.Status(http.StatusOK).JSON(api.StatusSuccess(200, "success", statusRes))
 	}
 }
 

@@ -1,9 +1,11 @@
-package handler
+package register_handler
 
 import (
 	"context"
 	"fmt"
+	"goEx/api"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -26,52 +28,28 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 
 		err := c.BodyParser(&regInput)
 		if err != nil {
-			return fiber.NewError(999, "cannot Parser to body")
+			return c.Status(http.StatusConflict).JSON(api.Err(999, "cannot Parser to body"))
 		}
 		key := fmt.Sprintf("REGISTER:%s", regInput.CitizenId)
-
 		birthDate, checkAge := checkAge(regInput.Birthdate)
 		if checkAge == false {
-			data := ReturnResponse{
-				Code:    403,
-				Message: "User is underage cannot register",
-			}
-			return c.JSON(data)
+			return c.Status(http.StatusForbidden).JSON(api.Err(403, "User is underage cannot register"))
 		}
 
 		resgfisResult, err := registerFunc(regInput.CitizenId, regInput.Name, birthDate, regInput.Mobile)
 		if err != nil {
 			if strings.Contains(err.Error(), "tbl_register_cid_key") {
-				data := ReturnResponse{
-					Code:    409,
-					Message: "User already registerd",
-				}
-				return c.JSON(data)
+				return c.Status(http.StatusConflict).JSON(api.Err(403, "User already registerd"))
 			} else {
-				data := ReturnResponse{
-					Code:    500,
-					Message: "error has occurred. please contact your system administrator",
-				}
-				return c.JSON(data)
+				return c.Status(http.StatusInternalServerError).JSON(api.Err(500, "error has occurred. please contact your system administrator"))
 			}
 		}
 
 		err = setRegisterRedisFunc(c.Context(), key, resgfisResult)
 		if err != nil {
-			data := ReturnResponse{
-				Code:    500,
-				Message: "error has occurred. please contact your system administrator",
-			}
-			return c.JSON(data)
+			return c.Status(http.StatusInternalServerError).JSON(api.Err(500, "error has occurred. please contact your system administrator"))
 		}
-		data := ReturnResponse{
-			Code:    201,
-			Message: "success",
-			Data: &DataResult{
-				RegisterCode: resgfisResult,
-			},
-		}
-		return c.JSON(data)
+		return c.Status(http.StatusCreated).JSON(api.RegisterCodeSuccess(201, "success", resgfisResult))
 	}
 }
 
@@ -83,7 +61,6 @@ func NewRegisterFunc(db *sqlx.DB) RegisterFunc {
 	return func(citizenId string, name string, birthdate string, mobile string) (string, error) {
 		randNumStr := getRegisterCode()
 		query := "insert into tbl_register (cid, name, birthdate, mobile, status, register_code) values ($1, $2, $3, $4, $5, $6)"
-
 		tx, err := db.Begin()
 		if err != nil {
 			return "", err

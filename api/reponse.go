@@ -17,3 +17,22 @@ func Err(code int, message string) ReturnResponse {
 		Message: message,
 	}
 }
+func RegisterCodeSuccess(code int, message string, status string) ReturnResponse {
+	return ReturnResponse{
+		Code:    code,
+		Message: message,
+		Data: &DataResult{
+			RegisterCode: status,
+		},
+	}
+}
+
+func StatusSuccess(code int, message string, status string) ReturnResponse {
+	return ReturnResponse{
+		Code:    code,
+		Message: message,
+		Data: &DataResult{
+			Status: status,
+		},
+	}
+}
