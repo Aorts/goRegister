@@ -30,7 +30,7 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 		}
 		key := fmt.Sprintf("REGISTER:%s", regInput.CitizenId)
 
-		Birthdate, checkAge := checkAge(regInput.Birthdate)
+		birthDate, checkAge := checkAge(regInput.Birthdate)
 		if checkAge == false {
 			data := ReturnResponse{
 				Code:    403,
@@ -39,7 +39,7 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 			return c.JSON(data)
 		}
 
-		resgfisResult, err := registerFunc(regInput.CitizenId, regInput.Name, Birthdate, regInput.Mobile)
+		resgfisResult, err := registerFunc(regInput.CitizenId, regInput.Name, birthDate, regInput.Mobile)
 		if err != nil {
 			if strings.Contains(err.Error(), "tbl_register_cid_key") {
 				data := ReturnResponse{

@@ -41,3 +41,21 @@
 
 "cid": "1469903155222",
     "register_code": "1775"
+
+
+    func newFiberApp() *fiber.App {
+	app := fiber.New()
+
+	return app
+}
+
+func TestRegisterPass() (t *testing.T) {
+	SetRegisterRedisFunc := func(citizenId string, name string, birthdate string, mobile string) (string, error) {
+		return "1111", nil
+	}
+	SetRegisterRedisFunc := func(ctx context.Context, key string, value string) error {
+		return nil
+	}
+	handler := RegisterHandler(NewRegisterFunc(), SetRegisterRedisFunc, SetRegisterRedisFunc)
+
+}

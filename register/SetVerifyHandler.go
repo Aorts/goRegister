@@ -25,11 +25,10 @@ func SetVerifyHandler(getRedisfunc SetVerifyFunc, delRedis DelVerifyFunc, update
 		key := fmt.Sprintf("REGISTER:%s", veriInput.CitizenId)
 		result, err := getRedisfunc(c.Context(), key)
 		if err != nil {
-			data := ReturnResponse{
+			return c.JSON(ReturnResponse{
 				Code:    404,
 				Message: "Invalid Citizen ID",
-			}
-			return c.JSON(data)
+			})
 		}
 		if result != veriInput.RegisterCode {
 			data := ReturnResponse{
@@ -41,7 +40,7 @@ func SetVerifyHandler(getRedisfunc SetVerifyFunc, delRedis DelVerifyFunc, update
 		err = delRedis(c.Context(), key)
 		if err != nil {
 			data := ReturnResponse{
-				Code:    200,
+				Code:    999,
 				Message: "error has occurred. please contact your system administrator",
 			}
 			return c.JSON(data)
@@ -49,7 +48,7 @@ func SetVerifyHandler(getRedisfunc SetVerifyFunc, delRedis DelVerifyFunc, update
 		err = updateStatus(veriInput.CitizenId)
 		if err != nil {
 			data := ReturnResponse{
-				Code:    500,
+				Code:    999,
 				Message: "error has occurred. please contact your system administrator",
 			}
 			return c.JSON(data)

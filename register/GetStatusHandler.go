@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"goEx/api"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,11 +18,7 @@ func GetStatusHandler(getStatusFunc GetStatusFunc) fiber.Handler {
 		statusRes, err := getStatusFunc(citizenId)
 		if err != nil {
 			if strings.Contains(err.Error(), "sql: no rows in result set") {
-				data := ReturnResponse{
-					Code:    404,
-					Message: "Invilid Citizen ID",
-				}
-				return c.JSON(data)
+				return c.JSON(api.Err(404, "error has occurred. please contact your system administrator"))
 			} else {
 				data := ReturnResponse{
 					Code:    500,
