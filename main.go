@@ -1,85 +1,32 @@
 package main
 
 import (
-	"fmt"
 	"goEx/config"
+	"goEx/infrastructures/db"
+	redisInfra "goEx/infrastructures/redis"
 	register_handler "goEx/register"
-	"strings"
-	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/spf13/viper"
 )
 
 func main() {
 
-	cfg, err := initConfig()
+	cfg, err := config.InitConfig()
 	if err != nil {
 		panic(err.Error())
 	}
-	db, err := initDatabase(cfg.Database.Driver, cfg.Database.Username, cfg.Database.Password, cfg.Database.Host, cfg.Database.Database)
+	db, err := db.InitDatabase(cfg.Database.Driver, cfg.Database.Username, cfg.Database.Password, cfg.Database.Host, cfg.Database.Database)
 	if err != nil {
 		panic(err.Error())
 	}
-	redisClient := initRedis(cfg.Redis)
+	redisClient := redisInfra.InitRedis(cfg.Redis)
 	app := fiber.New()
 	app.Get("/version", func(c *fiber.Ctx) error {
-		return c.SendString(cfg.Version)
+		return c.SendString("v1.1.1")
 	})
 	app.Post("/api/register", register_handler.RegisterHandler(register_handler.NewRegisterFunc(db), register_handler.NewRegisterRedisFunc(redisClient)))
 	app.Post("/api/verify", register_handler.SetVerifyHandler(register_handler.NewSetVerifyFunc(redisClient), register_handler.NewDelVerifyFunc(redisClient), register_handler.NewUpdateVerifyFunc(db)))
 	app.Get("/api/:cid", register_handler.GetStatusHandler(register_handler.NewGetStatusFunc(db)))
 	app.Listen(cfg.Server.Port)
-}
-
-func initConfig() (*config.Config, error) {
-	viper.SetDefault("Server.Port", ":8080")
-	viper.SetDefault("Database.Version", "v0.0.1")
-	viper.SetDefault("Database.Driver", "postgres")
-	viper.SetDefault("Database.Username", "ts")
-	viper.SetDefault("Database.Password", "ts")
-	viper.SetDefault("Database.Host", "localhost:5432")
-	viper.SetDefault("Database.Database", "postgres")
-	viper.SetDefault("Redis.Host", "localhost:6379")
-
-	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	var cfg config.Config
-	err := viper.Unmarshal(&cfg)
-	if err != nil {
-		return nil, err
-	}
-	return &cfg, nil
-}
-
-func initDatabase(driver string, username string, password string, host string, database string) (*sqlx.DB, error) {
-	dsn := fmt.Sprintf("%v://%v:%v@%v/%v?sslmode=disable",
-		driver, username, password, host, database,
-	)
-	db, err := sqlx.Open(driver, dsn)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Ping()
-	if err != nil {
-		return nil, err
-	} else {
-		fmt.Println("Database Connected!!")
-	}
-
-	db.SetConnMaxLifetime(5 * time.Hour)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
-
-	return db, nil
-}
-
-func initRedis(cfg config.RedisConfig) *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr: cfg.Host,
-	})
 }

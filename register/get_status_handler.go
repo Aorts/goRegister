@@ -1,9 +1,9 @@
 package register_handler
 
 import (
+	"database/sql"
 	"goEx/api"
 	"net/http"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
@@ -18,11 +18,10 @@ func GetStatusHandler(getStatusFunc GetStatusFunc) fiber.Handler {
 		citizenId := c.Params("cid")
 		statusRes, err := getStatusFunc(citizenId)
 		if err != nil {
-			if strings.Contains(err.Error(), "sql: no rows in result set") {
+			if sql.ErrNoRows == err {
 				return c.Status(http.StatusNotFound).JSON(api.Err(404, "error has occurred. please contact your system administrator"))
-			} else {
-				return c.Status(http.StatusInternalServerError).JSON(api.Err(500, "error has occurred. please contact your system administrator"))
 			}
+			return c.Status(http.StatusInternalServerError).JSON(api.Err(500, "error has occurred. please contact your system administrator"))
 		}
 		return c.Status(http.StatusOK).JSON(api.StatusSuccess(200, "success", statusRes))
 	}

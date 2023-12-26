@@ -31,8 +31,8 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 			return c.Status(http.StatusConflict).JSON(api.Err(999, "cannot Parser to body"))
 		}
 		key := fmt.Sprintf("REGISTER:%s", regInput.CitizenId)
-		birthDate, checkAge := checkAge(regInput.Birthdate)
-		if checkAge == false {
+		birthDate, isOver := checkAge(regInput.Birthdate)
+		if isOver {
 			return c.Status(http.StatusForbidden).JSON(api.Err(403, "User is underage cannot register"))
 		}
 
@@ -41,6 +41,7 @@ func RegisterHandler(registerFunc RegisterFunc, setRegisterRedisFunc SetRegister
 			if strings.Contains(err.Error(), "tbl_register_cid_key") {
 				return c.Status(http.StatusConflict).JSON(api.Err(403, "User already registerd"))
 			} else {
+				fmt.Println(err)
 				return c.Status(http.StatusInternalServerError).JSON(api.Err(500, "error has occurred. please contact your system administrator"))
 			}
 		}
@@ -110,7 +111,7 @@ func checkAge(birthdate string) (string, bool) {
 	ages := today.Sub(birthDate).Hours() / 24 / 365
 
 	if ages > 15 {
-		return dt, true
+		return "", true
 	}
 	return dt, false
 }
