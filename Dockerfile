@@ -1,14 +1,30 @@
-FROM golang:1.21-alpine AS build
+FROM golang:alpine as builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+RUN apk add git
 
-COPY *.go ./
+COPY go.mod .
+COPY go.sum .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /go-register
+COPY . .
+
+RUN apk update
+
+RUN apk add gcc libc-dev make
+
+
+FROM alpine:latest as release
+
+
+
+COPY --from=builder /app/main /app/cmd/
+
+RUN chmod +x /app/cmd/main
+
+WORKDIR /app
 
 EXPOSE 8080
 
-CMD ["/go-register"]
+CMD ["cmd/main"]
+
