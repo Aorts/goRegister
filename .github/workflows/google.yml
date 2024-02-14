@@ -17,7 +17,7 @@ on:
     branches: [ "main" ]
 
 env:
-  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  PROJECT_ID: ${{ secrets.GKE_SECRET }}
   GAR_LOCATION: asia-southeast1
   GKE_CLUSTER: go-cluster-1
   GKE_ZONE: asia-southeast1
