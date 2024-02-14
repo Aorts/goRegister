@@ -58,15 +58,16 @@ jobs:
     # Build the Docker image
     - name: Build
       run: |-
+        gcloud auth configure-docker
         docker build \
-          --tag "asia-southeast1-docker.pkg.dev/gcp-devops-412404/go-hello-world" \
+          --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA" \
           --build-arg GITHUB_SHA="$GITHUB_SHA" \
           --build-arg GITHUB_REF="$GITHUB_REF" \
           .
-    # Push the Docker image to Google Artifact Registry
+      # Push the Docker image to Google Artifact Registry
     - name: Publish
       run: |-
-        docker push "asia-southeast1-docker.pkg.dev/gcp-devops-412404/go-hello-world"
+        docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
     # Set up kustomize
     - name: Set up Kustomize
       run: |-
