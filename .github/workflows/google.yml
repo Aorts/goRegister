@@ -50,7 +50,13 @@ jobs:
     - name: Publish
       run: |-
         docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
-        
+
+    - name: install the gcloud cli
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        project_id: ${{ secrets.PROJECT_ID }}
+        install_components: 'gke-gcloud-auth-plugin'
+        export_default_credentials: true
         
     # Deploy the Docker image to the GKE cluster
     - name: Deploy
