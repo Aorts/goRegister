@@ -7,7 +7,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJEKT_ID }}
   GAR_LOCATION: asia-southeast1
-  GKE_CLUSTER: go-cluster-1
+  GKE_CLUSTER: golang-cluster-0
   GKE_ZONE: asia-southeast1
   DEPLOYMENT_NAME: gke-hello-world
   REPOSITORY: go-hello-world
