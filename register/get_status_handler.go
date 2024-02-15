@@ -3,6 +3,7 @@ package register_handler
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"goEx/api"
 	"net/http"
 
@@ -17,7 +18,7 @@ type GetStatusResult struct {
 func GetStatusHandler(logger *zap.Logger, getStatusFunc GetStatusFunc) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		citizenId := c.Params("cid")
-		logger.Info(citizenId)
+		logger.Info(fmt.Sprintf("iam here %s", citizenId))
 		statusRes, err := getStatusFunc(citizenId)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
