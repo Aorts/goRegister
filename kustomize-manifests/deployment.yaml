@@ -15,5 +15,5 @@ spec:
     spec:
       containers:
         - name: app
-          image: GAR_LOCATION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:GITHUB_SHA
+          image: $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA
           imagePullPolicy: Always
