@@ -64,5 +64,5 @@ jobs:
     - name: Deploy Image to GKE cluster
       run: |-
         gcloud container clusters get-credentials $GKE_CLUSTER --region $GKE_ZONE
-        sed -i "s/GOOGLE_PROJECT/PROJECT_ID/g" kustomization.yaml
+        sed -i "s/GOOGLE_PROJECT/$PROJECT_ID/g" kustomize-manifests/kustomization.yaml
         kubectl apply -k kustomize-manifests
