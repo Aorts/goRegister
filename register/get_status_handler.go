@@ -2,23 +2,25 @@ package register_handler
 
 import (
 	"database/sql"
+	"errors"
 	"goEx/api"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 )
 
 type GetStatusResult struct {
 	Status string `db:"status"`
 }
 
-func GetStatusHandler(getStatusFunc GetStatusFunc) fiber.Handler {
+func GetStatusHandler(logger *zap.Logger, getStatusFunc GetStatusFunc) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		citizenId := c.Params("cid")
+		logger.Info(citizenId)
 		statusRes, err := getStatusFunc(citizenId)
 		if err != nil {
-			if sql.ErrNoRows == err {
+			if errors.Is(err, sql.ErrNoRows) {
 				return c.Status(http.StatusNotFound).JSON(api.Err(404, "error has occurred. please contact your system administrator"))
 			}
 			return c.Status(http.StatusInternalServerError).JSON(api.Err(500, "error has occurred. please contact your system administrator"))
@@ -29,15 +31,8 @@ func GetStatusHandler(getStatusFunc GetStatusFunc) fiber.Handler {
 
 type GetStatusFunc func(citizenId string) (string, error)
 
-func NewGetStatusFunc(db *sqlx.DB) GetStatusFunc {
+func NewGetStatusFunc() GetStatusFunc {
 	return func(citizenId string) (string, error) {
-		query := "select status  from  tbl_register where  cid=$1"
-		res := GetStatusResult{}
-		err := db.Get(&res, query, citizenId)
-		if err != nil {
-			return "", err
-		}
-		status := res.Status
-		return status, nil
+		return citizenId, nil
 	}
 }

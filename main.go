@@ -2,9 +2,11 @@ package main
 
 import (
 	"goEx/config"
+	register_handler "goEx/register"
 
 	"github.com/gofiber/fiber/v2"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -12,6 +14,10 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	logger := zap.Must(zap.NewProduction())
+
+	defer logger.Sync()
+
 	//db, err := db.InitDatabase(cfg.Database.Driver, cfg.Database.Username, cfg.Database.Password, cfg.Database.Host, cfg.Database.Database)
 	//if err != nil {
 	//	panic(err.Error())
@@ -23,7 +29,7 @@ func main() {
 	})
 	//app.Post("/api/register", register_handler.RegisterHandler(register_handler.NewRegisterFunc(db), register_handler.NewRegisterRedisFunc(redisClient)))
 	//app.Post("/api/verify", register_handler.SetVerifyHandler(register_handler.NewSetVerifyFunc(redisClient), register_handler.NewDelVerifyFunc(redisClient), register_handler.NewUpdateVerifyFunc(db)))
-	//app.Get("/api/:cid", register_handler.GetStatusHandler(register_handler.NewGetStatusFunc(db)))
+	app.Get("/api/:cid", register_handler.GetStatusHandler(logger, register_handler.NewGetStatusFunc()))
 	app.Get("/something", func(c *fiber.Ctx) error {
 		return c.SendString("something")
 	})

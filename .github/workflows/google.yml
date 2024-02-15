@@ -58,9 +58,13 @@ jobs:
         service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
         install_components: 'gke-gcloud-auth-plugin'
         export_default_credentials: true
+
+    - name: delete old pod
+      run: |
+        gcloud container clusters get-credentials $GKE_CLUSTER --region $GKE_ZONE
+        kubectl delete deployment $GKE_CLUSTER
         
     # Deploy the Docker image to the GKE cluster
     - name: Deploy
       run: |
-        gcloud container clusters get-credentials $GKE_CLUSTER --region $GKE_ZONE
         kubectl create deployment $GKE_CLUSTER --image=$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA
