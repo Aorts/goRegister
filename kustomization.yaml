@@ -1,6 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
+commonLabels:
+  app: golang-cluster-0
+  namespace: golang-deployment-01
 resources:
-  - service.yaml
   - deployment.yaml
+  - service.yaml
