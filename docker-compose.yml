@@ -2,14 +2,18 @@ version: '3.9'
 services: 
   redis:
     image: redis
-    container_name: redis
+    container_name: rediss
     ports: 
       - '6379:6379'
   db:
     image: postgres
-    restart: always
     environment:
       - POSTGRES_USER=ts
       - POSTGRES_PASSWORD=ts
     ports:
       - '5432:5432'
+  mongo:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - 27017:27017
